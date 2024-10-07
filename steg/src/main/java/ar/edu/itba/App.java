@@ -5,13 +5,15 @@ package ar.edu.itba;
  *
  */
 public class App {
+    Embed embed;
+    Extract extract;
 
     public void main(String[] args) {
         String action = args[0];
         if (action.equals("embed"))
-            Embed.embed(args);
+            embed.embed(args);
         else if (action.equals("extract"))
-            Extract.extract(args);
+            extract.extract(args);
     }
 
 }

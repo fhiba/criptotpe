@@ -4,5 +4,5 @@ import java.io.FileInputStream;
 
 public interface Algorithm {
 
-    void run(int blue, int green, int red, FileInputStream message, int messageBitCounter);
+    byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter);
 }

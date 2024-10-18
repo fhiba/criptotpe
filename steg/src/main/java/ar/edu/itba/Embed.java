@@ -32,7 +32,7 @@ public class Embed {
         File bmpFile = new File(bitmapFile);
         FileInputStream fis = new FileInputStream(bmpFile);
         FileInputStream message = new FileInputStream(new File(filePath));
-
+        byte[] messageBytes = message.readAllBytes();
         byte[] header = new byte[54]; // salteamos el header de bitmap v3
         fis.read(header);
 
@@ -46,26 +46,34 @@ public class Embed {
         int height = image.getWidth();
 
         int messageBitCounter = 0;
+        int messageByteCounter = 0;
         int pixelIndex = 0;
+        byte[] modifiedPixels;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                int blue = pixelData[pixelIndex] & 0xFF; // Blue
-                int green = pixelData[pixelIndex + 1] & 0xFF; // Green
-                int red = pixelData[pixelIndex + 2] & 0xFF; // Red
+                byte blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+                byte green = (byte) (pixelData[pixelIndex + 1] & 0xFF); // Green
+                byte red = (byte) (pixelData[pixelIndex + 2] & 0xFF); // Red
 
-                int rgb = (red << 16) | (green << 8) | blue;
+                modifiedPixels = alg.run(blue, green, red, messageBytes, messageByteCounter, messageBitCounter);
 
-                // LSB(blue,green,red,message,messageBitCounter);
-                // UTILIZAR LSB aca para modificar los pixeles
+                // me fijo si puedo sumar 3 en el bit counter o si tengo que adelantar el byte
+                if (messageBitCounter + 3 >= 7) {
+                    messageByteCounter++;
+                    messageBitCounter = (messageBitCounter + 3) % 8;
+                } else {
+                    messageBitCounter += 3;
+                }
+
+                int rgb = (modifiedPixels[0] << 16) | (modifiedPixels[1] << 8) | modifiedPixels[2];
                 image.setRGB(x, height - y - 1, rgb);
 
                 pixelIndex += 3;
-                messageBitCounter += 3;
             }
         }
 
         // Save the image as a PNG (or any other format)
-        ImageIO.write(image, "png", new File("output_image.png"));
+        ImageIO.write(image, "png", new File(outFile));
         System.out.println("BMP converted to PNG and saved.");
     }
 }

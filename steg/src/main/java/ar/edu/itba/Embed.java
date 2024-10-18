@@ -58,11 +58,11 @@ public class Embed {
                 modifiedPixels = alg.run(blue, green, red, messageBytes, messageByteCounter, messageBitCounter);
 
                 // me fijo si puedo sumar 3 en el bit counter o si tengo que adelantar el byte
-                if (messageBitCounter + 3 >= 7) {
+                if (messageBitCounter + 3 * alg.getBitsUsed() >= 8) {
                     messageByteCounter++;
-                    messageBitCounter = (messageBitCounter + 3) % 8;
+                    messageBitCounter = (messageBitCounter + 3 * alg.getBitsUsed()) % 8;
                 } else {
-                    messageBitCounter += 3;
+                    messageBitCounter += 3 * alg.getBitsUsed();
                 }
 
                 int rgb = (modifiedPixels[0] << 16) | (modifiedPixels[1] << 8) | modifiedPixels[2];

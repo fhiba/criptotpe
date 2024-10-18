@@ -27,4 +27,5 @@ public enum AlgEnum {
             System.out.println("No algorithm found for " + argument);
         return out;
     }
+
 }

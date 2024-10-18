@@ -1,13 +1,13 @@
 package ar.edu.itba.algs;
 
 import ar.edu.itba.Algorithm;
+import java.io.FileInputStream;
 
 public class LSB4 implements Algorithm {
 
     @Override
-    public void run(byte blue, byte green, byte red, FileInputStream message, int messageBitCounter) {
-        
-        System.out.println("running LSBj");
+    public byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter) {
+        return new byte[1];
     }
 
 }

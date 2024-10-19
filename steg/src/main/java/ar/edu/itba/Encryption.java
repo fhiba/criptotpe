@@ -1,10 +1,13 @@
 package ar.edu.itba;
 import ar.edu.itba.exceptions.DecryptionErrorException;
 import ar.edu.itba.exceptions.EncryptionErrorException;
+import ar.edu.itba.utils.KeyIvPair;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -27,23 +30,37 @@ public class Encryption {
         this.algorithm = alg != null ? alg : EncEnum.AES128;
     }
 
-    private SecretKey generateKeyFromPassword(String password) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, 65536, this.algorithm.getKeySize());
+    private KeyIvPair generateKeyAndIvFromPassword(String password) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, 65536, this.algorithm.getKeySize() + 128); // Add 128 bits (16 bytes) for the IV
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        return factory.generateSecret(spec);
+        byte[] keyAndIv = factory.generateSecret(spec).getEncoded();
+
+        byte[] keyBytes = new byte[this.algorithm.getKeySize() / 8];
+        byte[] ivBytes = new byte[16];
+
+        System.arraycopy(keyAndIv, 0, keyBytes, 0, keyBytes.length);
+        System.arraycopy(keyAndIv, keyBytes.length, ivBytes, 0, ivBytes.length);
+
+        SecretKeySpec secretKey = new SecretKeySpec(keyBytes, this.algorithm.getAlgName());
+        IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
+
+        return new KeyIvPair(secretKey, ivSpec);
     }
 
     private String generateTransformationStr(){
         return this.algorithm.getAlgName() + "/" + this.mode.mode.toUpperCase() + "/" + DEFAULT_PADDING;
     }
 
-    private byte[] cryptoOperation(byte[] message, int cypherEncryptMode) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        SecretKey secretKey = generateKeyFromPassword(this.password);
+    private byte[] cryptoOperation(byte[] message, int cypherEncryptMode) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+        KeyIvPair keyIvPair = generateKeyAndIvFromPassword(this.password);
         Cipher cipher = Cipher.getInstance(generateTransformationStr());
-        System.out.println("Transf string: "+generateTransformationStr());
-        cipher.init(cypherEncryptMode, secretKey);
-        return cipher.doFinal(message);
+        if (this.mode==EncModeEnum.ECB) {
+            cipher.init(cypherEncryptMode, keyIvPair.getSecretKey());
+        } else {
+            cipher.init(cypherEncryptMode, keyIvPair.getSecretKey(), keyIvPair.getIv());
+        }
 
+        return cipher.doFinal(message);
     }
 
     public byte[] encrypt(byte[] message) throws EncryptionErrorException {

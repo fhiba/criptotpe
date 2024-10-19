@@ -2,18 +2,14 @@ package ar.edu.itba;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
-
-/**
- * Hello world!
- *
- 
- */
-
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.HelpFormatter;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 public class App {
@@ -144,9 +140,7 @@ public class App {
             algorithm = alg.get();
 
             if (cmd.hasOption("pass")) {
-                encryption = new Encryption(cmd.getOptionValue("pass"),
-                        EncModeEnum.getMode(cmd.getOptionValue("m")),
-                        EncEnum.getEncryption(cmd.getOptionValue("a")));
+                encryption = new Encryption(EncModeEnum.getMode(cmd.getOptionValue("m")), EncEnum.getEncryption(cmd.getOptionValue("a")), cmd.getOptionValue("pass"));
             }
 
         } catch (ParseException e) {
@@ -160,7 +154,7 @@ public class App {
     public static void main(String[] args) {
         App app = new App();
         app.setUp(args);
-
     }
+
 
 }

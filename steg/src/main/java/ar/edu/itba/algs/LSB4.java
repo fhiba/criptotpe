@@ -1,10 +1,9 @@
 package ar.edu.itba.algs;
 
 import ar.edu.itba.Algorithm;
-import java.io.FileInputStream;
 
 public class LSB4 implements Algorithm {
-    private Integer bitsUsed;
+    private Integer bitsUsed = 4;
 
     @Override
     public byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter) {

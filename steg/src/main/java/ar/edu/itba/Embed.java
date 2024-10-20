@@ -82,6 +82,10 @@ public class Embed {
         // steganografia del tamaño + padding y extension
         for (y = 0; y < height; y++) {
             for (x = 0; x < 4; x++) {
+                blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+                green = (byte) (pixelData[pixelIndex + 1] & 0xFF); // Green
+                red = (byte) (pixelData[pixelIndex + 2] & 0xFF); // Red
+
                 modifiedPixels = alg.run(blue, green, red, storeSize, sizeByteCounter, sizeBitCounter);
 
                 // me fijo si puedo sumar 3 en el bit counter o si tengo que adelantar el byte
@@ -99,9 +103,14 @@ public class Embed {
             }
         }
 
+        // TODO:encriptar el mensaje aca?
+
         // steganografia del mensaje
         for (; y < height; y++) {
             for (; x < width; x++) {
+                blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+                green = (byte) (pixelData[pixelIndex + 1] & 0xFF); // Green
+                red = (byte) (pixelData[pixelIndex + 2] & 0xFF); // Red
 
                 modifiedPixels = alg.run(blue, green, red, messageBytes, messageByteCounter, messageBitCounter);
 
@@ -127,6 +136,9 @@ public class Embed {
         // steganografia de la extension
         for (; y < height; y++) {
             for (; x < width; x++) {
+                blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+                green = (byte) (pixelData[pixelIndex + 1] & 0xFF); // Green
+                red = (byte) (pixelData[pixelIndex + 2] & 0xFF); // Red
 
                 modifiedPixels = alg.run(blue, green, red, extensionBytes, exByteCounter, exBitCounter);
 

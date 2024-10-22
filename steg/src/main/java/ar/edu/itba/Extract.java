@@ -3,13 +3,10 @@ package ar.edu.itba;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.FileWriter;
 import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
-
-import ar.edu.itba.exceptions.DecryptionErrorException;
-import ar.edu.itba.exceptions.EncryptionErrorException;
 
 public class Extract {
     private String encryptedBitmapFilePath;
@@ -28,10 +25,9 @@ public class Extract {
             pass = args[12];
         EncEnum encAlg = EncEnum.getEncryption(args[8]);
         enc = new Encryption(mode, encAlg, pass);
-        // enc.setMode(mode);
     }
 
-    public void retrieve() throws IOException, EncryptionErrorException, DecryptionErrorException {
+    public void retrieve() throws Exception {
         File bmpFile = new File(encryptedBitmapFilePath);
         File outFile = new File(outFilePath);
         FileInputStream fis = new FileInputStream(bmpFile);
@@ -99,7 +95,6 @@ public class Extract {
         aux = realSize;
         boolean eofFlag = false;
         StringBuilder reverseExtension = new StringBuilder();
-        int extensionCounter = 0;
         while (forExtraction != '.') {
             forExtraction = decriptedMsg[(int) aux];
             if (!eofFlag) {
@@ -110,10 +105,19 @@ public class Extract {
             } else {
                 reverseExtension.append((char) forExtraction);
             }
+            aux--;
         }
         String extension = reverseExtension.reverse().toString();
-
-        // TODO: falta poner el msj en un file y appendearle la extension.
+        int extensionLength = extension.length();
+        aux = 4;
+        try (FileWriter outputFile = new FileWriter(outFilePath.concat(extension))) {
+            while (aux < realSize - extensionLength) {
+                outputFile.append((char) decriptedMsg[(int) aux]);
+                aux++;
+            }
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 
 }

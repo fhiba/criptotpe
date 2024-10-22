@@ -32,13 +32,10 @@ public class LSB4 implements Algorithm {
     }
 
     @Override
-    public void extract(byte blue, byte green, byte red, byte[] bitMap, byte[] msg, int byteCounter,
-            int bitCounter) {
+
+    public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
         int currentBit;
         byte[] bytes = new byte[3];
-        bytes[0] = blue;
-        bytes[1] = red;
-        bytes[2] = green;
         for (int i = 0; i < 3; i++) { // Loop through blue, red, green bytes
             for (int j = 0; j < 4; j++) { // Extract 4 least significant bits
                 currentBit = (bytes[i] >> j) & 1;

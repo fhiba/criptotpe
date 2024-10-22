@@ -12,23 +12,24 @@ public class Embed {
     private String bitmapFile;
     private String outFile;
     private Algorithm alg;
-    private String mode;
+    private EncModeEnum mode;
     private String pass;
-    private String enc;
+    private EncEnum encEnum;
+    private Encryption enc;
 
     public void embed(String[] args) throws Exception {
         filePath = args[2];
         bitmapFile = args[4];
         outFile = args[6];
         alg = AlgEnum.getAlg(args[8]).get();
-        enc = args[10];
-        mode = args[12];
+        encEnum = EncEnum.getEncryption(args[10]);
+        mode = EncModeEnum.getMode(args[12]);
         if (args[14] != null)
             pass = args[14];
         else {
             pass = null;
         }
-        // enc.setMode(mode);
+        enc = new Encryption(mode, encEnum, pass);
         hide();
     }
 
@@ -47,8 +48,11 @@ public class Embed {
         String auxFileString = filePath.substring(filePath.indexOf("."));
         long fullSize = msgFile.length() + 4 + 2 + extension.length();
 
-        if (!canStore(bmpFile.length() - 54, fullSize))
+        if (!canStore(bmpFile.length() - 54, fullSize)) {
+            fis.close();
+            message.close();
             throw new RuntimeException();
+        }
 
         byte[] header = new byte[54]; // salteamos el header de bitmap v3
         fis.read(header);
@@ -103,7 +107,7 @@ public class Embed {
             }
         }
 
-        // TODO:encriptar el mensaje aca?
+        byte[] encryptedMsg = enc.encrypt(messageBytes);
 
         // steganografia del mensaje
         for (; y < height; y++) {
@@ -112,7 +116,7 @@ public class Embed {
                 green = (byte) (pixelData[pixelIndex + 1] & 0xFF); // Green
                 red = (byte) (pixelData[pixelIndex + 2] & 0xFF); // Red
 
-                modifiedPixels = alg.run(blue, green, red, messageBytes, messageByteCounter, messageBitCounter);
+                modifiedPixels = alg.run(blue, green, red, encryptedMsg, messageByteCounter, messageBitCounter);
 
                 // me fijo si puedo sumar 3 en el bit counter o si tengo que adelantar el byte
                 if (messageBitCounter + 3 * alg.getBitsUsed() >= 8) {
@@ -157,8 +161,6 @@ public class Embed {
             }
         }
 
-        // Save the image as a PNG (or any other format)
-        ImageIO.write(image, "png", new File(outFile));
-        System.out.println("BMP converted to PNG and saved.");
+        ImageIO.write(image, "bmp", new File(outFile));
     }
 }

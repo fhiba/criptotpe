@@ -34,10 +34,10 @@ public class LSB1 implements Algorithm {
     @Override
     public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
         int currentBit;
+
         currentBit = forExtraction & 1;
 
         msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
-
     }
 
     @Override

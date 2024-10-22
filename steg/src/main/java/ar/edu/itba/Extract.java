@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import javax.imageio.ImageIO;
 
@@ -79,7 +80,7 @@ public class Extract {
                 break;
 
         }
-        long realSize = Long.valueOf(ByteBuffer.wrap(fullSize).getInt() - 4);
+        long realSize = Long.valueOf(ByteBuffer.wrap(fullSize).order(ByteOrder.BIG_ENDIAN).getInt() - 4);
         System.out.println("Real size: " + realSize);
         byte[] msg = new byte[(int) realSize];
         bitCounter = 0;
@@ -88,7 +89,8 @@ public class Extract {
         long aux = realSize;
         for (; x < width; x++) {
             for (; y < height; y++) {
-                forExtraction = (byte) pixelData[x + y];
+                forExtraction = pixelData[x + y];
+
                 alg.extract(forExtraction, msg, byteCounter, bitCounter);
 
                 if (bitCounter + alg.getBitsUsed() >= 8) {
@@ -97,42 +99,42 @@ public class Extract {
                 } else {
                     bitCounter += alg.getBitsUsed();
                 }
+
                 aux--;
-                if (aux == 0)// se exactamente cuantos bytes hay del mensaje encriptado
+                if (aux == 0)
                     break;
             }
+            if (aux == 0)
+                break;
         }
         System.out.println("took message");
-        byte[] decriptedMsg = msg;
-        System.out.println(decriptedMsg.length);
+        byte[] decriptedMsg = ByteBuffer.wrap(msg).order(ByteOrder.BIG_ENDIAN).array();
         if (enc != null)
             decriptedMsg = enc.decrypt(msg);
+
         forExtraction = 0;
-        aux = realSize;
+        aux = 4;// arranco despues de donde estaba el tamanio
         boolean eofFlag = false;
-        StringBuilder reverseExtension = new StringBuilder();
-        while (((char) forExtraction) != '.') {
-            System.out.println(aux - 1);
-            forExtraction = decriptedMsg[(int) (aux - 1)];
-            if (!eofFlag) {
-                if ((char) forExtraction == '\0')
-                    eofFlag = true;
-                else
-                    continue;
-            } else {
-                reverseExtension.append((char) forExtraction);
-            }
-            aux--;
+        StringBuilder body = new StringBuilder();
+
+        int lastPunto = 0;
+        while (aux < realSize) {
+            forExtraction = decriptedMsg[(int) aux];
+            if ((char) forExtraction == '.')
+                lastPunto = (int) aux;
+            body.append(forExtraction);
+            aux++;
         }
-        System.out.println("jaiba se la mamo con el coso de la extension");
-        String extension = reverseExtension.reverse().toString();
+        String extension = body.substring(lastPunto);
+        // hay que ver si hace falta saltar 4 bytes denuevo o no
+        String actualBody = body.substring(0, lastPunto);
+        System.out.println("primeros bits " + actualBody.substring(0, 5));
+        System.out.println("Extracted extension: " + extension);
         int extensionLength = extension.length();
         aux = 4;
+        System.out.println(outFilePath);
         try (FileWriter outputFile = new FileWriter(outFilePath.concat(extension))) {
-            while (aux < realSize - extensionLength) {
-                outputFile.append((char) decriptedMsg[(int) aux]);
-                aux++;
-            }
+            // outputFile.append(actualBody.toCharArray());
         } catch (Exception e) {
             throw new Exception(e);
         }

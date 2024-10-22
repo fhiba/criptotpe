@@ -17,6 +17,19 @@ public class Embed {
     private EncEnum encEnum;
     private Encryption enc;
 
+    public void embed(String inputFile, String outputFile, String bmp, Algorithm algorithm, Encryption encryption)
+            throws Exception {
+        filePath = inputFile;
+        bitmapFile = bmp;
+        outFile = outputFile;
+        alg = algorithm;
+        mode = encryption.getMode();
+        pass = encryption.getPassword();
+        enc = encryption;
+        hide();
+
+    }
+
     public void embed(String[] args) throws Exception {
         filePath = args[2];
         bitmapFile = args[4];

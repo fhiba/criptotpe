@@ -1,5 +1,7 @@
 package ar.edu.itba.algs;
 
+import java.nio.ByteBuffer;
+
 import ar.edu.itba.Algorithm;
 
 public class LSB1 implements Algorithm {
@@ -42,6 +44,7 @@ public class LSB1 implements Algorithm {
             byteCounter++;
             bitCounter = 0;
         }
+        System.out.println("msg: " + ByteBuffer.wrap(msg).getInt());
 
     }
 

@@ -140,7 +140,8 @@ public class App {
             algorithm = alg.get();
 
             if (cmd.hasOption("pass")) {
-                encryption = new Encryption(EncModeEnum.getMode(cmd.getOptionValue("m")), EncEnum.getEncryption(cmd.getOptionValue("a")), cmd.getOptionValue("pass"));
+                encryption = new Encryption(EncModeEnum.getMode(cmd.getOptionValue("m")),
+                        EncEnum.getEncryption(cmd.getOptionValue("a")), cmd.getOptionValue("pass"));
             }
 
         } catch (ParseException e) {
@@ -154,7 +155,24 @@ public class App {
     public static void main(String[] args) {
         App app = new App();
         app.setUp(args);
-    }
+        try {
+            if (app.cmd.hasOption("embed")) {
+                app.embed = new Embed();
+                app.embed.embed(app.cmd.getOptionValue("in"), app.cmd.getOptionValue("out"),
+                        app.cmd.getOptionValue("p"), app.algorithm, app.encryption);
+                app.embed.hide();
+            } else {
+                app.extract = new Extract();
+                app.extract.extract(app.cmd.getOptionValue("p"), app.cmd.getOptionValue("out"), app.algorithm,
+                        app.encryption);
+                app.extract.retrieve();
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            System.exit(1);
 
+        }
+
+    }
 
 }

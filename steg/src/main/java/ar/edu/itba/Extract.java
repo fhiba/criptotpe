@@ -10,11 +10,18 @@ import javax.imageio.ImageIO;
 
 public class Extract {
     private String encryptedBitmapFilePath;
-    private String bitmapFile;
     private String outFilePath;
     private Algorithm alg;
     private Encryption enc;
     private String pass;
+
+    public void extract(String bmpFilePath, String outputFilePath, Algorithm algorithm, Encryption encryption) {
+        this.encryptedBitmapFilePath = bmpFilePath;
+        this.outFilePath = outputFilePath;
+        this.alg = algorithm;
+        this.enc = encryption;
+        this.pass = encryption == null ? null : encryption.getPassword();
+    }
 
     public void extract(String[] args) {
         encryptedBitmapFilePath = args[2];
@@ -29,9 +36,9 @@ public class Extract {
 
     public void retrieve() throws Exception {
         File bmpFile = new File(encryptedBitmapFilePath);
-        File outFile = new File(outFilePath);
         FileInputStream fis = new FileInputStream(bmpFile);
         byte[] header = new byte[54];
+
         fis.read(header);
 
         byte[] pixelData = new byte[fis.available()];
@@ -45,11 +52,12 @@ public class Extract {
 
         byte[] fullSize = new byte[4];
         int bitCounter = 0;
-        int byteCounter = 3;
+        int byteCounter = 0;
         int x = 0, y = 0;
 
         int pixelIndex = 0;
         byte blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+        System.out.println("funco??");
         for (y = 0; y < height; y++) {
             for (x = 0; x < width; x++) {
                 blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
@@ -63,12 +71,16 @@ public class Extract {
                     bitCounter += 3 * alg.getBitsUsed();
                 }
                 pixelIndex++;
-                if (pixelIndex == 3)// voy adelantando de a 1, se que el tamanio ocupa si o si 4 bytes
+                if (byteCounter == 3)// voy adelantando de a 1, se que el tamanio ocupa si o si 4 bytes
                     break;
             }
-        }
+            if (byteCounter == 3)
+                break;
 
-        long realSize = ByteBuffer.wrap(fullSize).getLong() - 4;
+        }
+        System.out.println("took size");
+        long realSize = Long.valueOf(ByteBuffer.wrap(fullSize).getInt() - 4);
+        System.out.println("Real size: " + realSize);
         byte[] msg = new byte[(int) realSize];
         bitCounter = 0;
         byteCounter = 0;
@@ -90,6 +102,7 @@ public class Extract {
                     break;
             }
         }
+        System.out.println("took message");
         byte[] decriptedMsg = enc.decrypt(msg);
         forExtraction = 0;
         aux = realSize;
@@ -107,6 +120,7 @@ public class Extract {
             }
             aux--;
         }
+        System.out.println("jaiba se la mamo con el coso de la extension");
         String extension = reverseExtension.reverse().toString();
         int extensionLength = extension.length();
         aux = 4;

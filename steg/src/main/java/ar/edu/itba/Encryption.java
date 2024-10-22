@@ -1,4 +1,5 @@
 package ar.edu.itba;
+
 import ar.edu.itba.exceptions.DecryptionErrorException;
 import ar.edu.itba.exceptions.EncryptionErrorException;
 import ar.edu.itba.utils.KeyIvPair;
@@ -19,10 +20,9 @@ public class Encryption {
     private EncEnum algorithm;
     private String password;
 
-    private static final byte[] SALT = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    private static final byte[] SALT = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     private static final byte[] IV = new byte[16];
     private static final String DEFAULT_PADDING = "PKCS5Padding";
-
 
     public Encryption(EncModeEnum mode, EncEnum alg, String password) {
         this.password = password;
@@ -30,8 +30,16 @@ public class Encryption {
         this.algorithm = alg != null ? alg : EncEnum.AES128;
     }
 
-    private KeyIvPair generateKeyAndIvFromPassword(String password) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, 65536, this.algorithm.getKeySize() + 128); // Add 128 bits (16 bytes) for the IV
+    private KeyIvPair generateKeyAndIvFromPassword(String password)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, 65536, this.algorithm.getKeySize() + 128); // Add
+                                                                                                                  // 128
+                                                                                                                  // bits
+                                                                                                                  // (16
+                                                                                                                  // bytes)
+                                                                                                                  // for
+                                                                                                                  // the
+                                                                                                                  // IV
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] keyAndIv = factory.generateSecret(spec).getEncoded();
 
@@ -47,14 +55,16 @@ public class Encryption {
         return new KeyIvPair(secretKey, ivSpec);
     }
 
-    private String generateTransformationStr(){
+    private String generateTransformationStr() {
         return this.algorithm.getAlgName() + "/" + this.mode.mode.toUpperCase() + "/" + DEFAULT_PADDING;
     }
 
-    private byte[] cryptoOperation(byte[] message, int cypherEncryptMode) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+    private byte[] cryptoOperation(byte[] message, int cypherEncryptMode)
+            throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
         KeyIvPair keyIvPair = generateKeyAndIvFromPassword(this.password);
         Cipher cipher = Cipher.getInstance(generateTransformationStr());
-        if (this.mode==EncModeEnum.ECB) {
+        if (this.mode == EncModeEnum.ECB) {
             cipher.init(cypherEncryptMode, keyIvPair.getSecretKey());
         } else {
             cipher.init(cypherEncryptMode, keyIvPair.getSecretKey(), keyIvPair.getIv());
@@ -66,7 +76,7 @@ public class Encryption {
     public byte[] encrypt(byte[] message) throws EncryptionErrorException {
         try {
             return cryptoOperation(message, Cipher.ENCRYPT_MODE);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new EncryptionErrorException(e.getMessage());
         }
 
@@ -75,8 +85,32 @@ public class Encryption {
     public byte[] decrypt(byte[] encMessage) throws EncryptionErrorException, DecryptionErrorException {
         try {
             return cryptoOperation(encMessage, Cipher.DECRYPT_MODE);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new DecryptionErrorException(e.getMessage());
         }
+    }
+
+    public EncModeEnum getMode() {
+        return mode;
+    }
+
+    public EncEnum getAlgorithm() {
+        return algorithm;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public static byte[] getSalt() {
+        return SALT;
+    }
+
+    public static byte[] getIv() {
+        return IV;
+    }
+
+    public static String getDefaultPadding() {
+        return DEFAULT_PADDING;
     }
 }

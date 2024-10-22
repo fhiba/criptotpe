@@ -56,29 +56,29 @@ public class Extract {
         int x = 0, y = 0;
 
         int pixelIndex = 0;
-        byte blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+        byte infoPixel = (byte) pixelData[pixelIndex];
         System.out.println("funco??");
-        for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-                blue = (byte) (pixelData[pixelIndex] & 0xFF); // Blue
+        for (x = 0; x < width; x++) {
+            for (y = 0; y < height; x++) {
+                infoPixel = (byte) pixelData[x + y];
 
-                alg.extract(blue, fullSize, byteCounter, bitCounter);
+                alg.extract(infoPixel, fullSize, byteCounter, bitCounter);
 
-                if (bitCounter + 3 * alg.getBitsUsed() >= 8) {
+                if (bitCounter + alg.getBitsUsed() >= 8) {
                     byteCounter++;
-                    bitCounter = (bitCounter + 3 * alg.getBitsUsed()) % 8;
+                    bitCounter = (bitCounter + alg.getBitsUsed()) % 8;
                 } else {
-                    bitCounter += 3 * alg.getBitsUsed();
+                    bitCounter += alg.getBitsUsed();
                 }
-                pixelIndex++;
+
                 if (byteCounter == 3)// voy adelantando de a 1, se que el tamanio ocupa si o si 4 bytes
                     break;
+
             }
             if (byteCounter == 3)
                 break;
 
         }
-        System.out.println("took size");
         long realSize = Long.valueOf(ByteBuffer.wrap(fullSize).getInt() - 4);
         System.out.println("Real size: " + realSize);
         byte[] msg = new byte[(int) realSize];
@@ -86,9 +86,9 @@ public class Extract {
         byteCounter = 0;
         byte forExtraction;
         long aux = realSize;
-        for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-                forExtraction = (byte) (pixelData[pixelIndex] & 0xFF);
+        for (; x < width; x++) {
+            for (; y < height; y++) {
+                forExtraction = (byte) pixelData[x + y];
                 alg.extract(forExtraction, msg, byteCounter, bitCounter);
 
                 if (bitCounter + alg.getBitsUsed() >= 8) {
@@ -103,15 +103,19 @@ public class Extract {
             }
         }
         System.out.println("took message");
-        byte[] decriptedMsg = enc.decrypt(msg);
+        byte[] decriptedMsg = msg;
+        System.out.println(decriptedMsg.length);
+        if (enc != null)
+            decriptedMsg = enc.decrypt(msg);
         forExtraction = 0;
         aux = realSize;
         boolean eofFlag = false;
         StringBuilder reverseExtension = new StringBuilder();
-        while (forExtraction != '.') {
-            forExtraction = decriptedMsg[(int) aux];
+        while (((char) forExtraction) != '.') {
+            System.out.println(aux - 1);
+            forExtraction = decriptedMsg[(int) (aux - 1)];
             if (!eofFlag) {
-                if (forExtraction == '\0')
+                if ((char) forExtraction == '\0')
                     eofFlag = true;
                 else
                     continue;

@@ -38,14 +38,6 @@ public class LSB1 implements Algorithm {
 
         msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
 
-        bitCounter++;
-
-        if (bitCounter == 8) {
-            byteCounter++;
-            bitCounter = 0;
-        }
-        System.out.println("msg: " + ByteBuffer.wrap(msg).getInt());
-
     }
 
     @Override

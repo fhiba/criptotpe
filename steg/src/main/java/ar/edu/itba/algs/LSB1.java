@@ -8,24 +8,28 @@ public class LSB1 implements Algorithm {
 
   @Override
   public byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter) {
-    int currentBit;
     byte[] bytes = new byte[3];
-    bytes[0] = blue;
-    bytes[1] = red;
-    bytes[2] = green;
+    bytes[0] = blue; // Original blue value
+    bytes[1] = red; // Original red value
+    bytes[2] = green; // Original green value
+
+    // Modify LSBs based on message bits, checking array bounds
     for (int i = 0; i < 3; i++) {
-      currentBit = (message[messageBitCounter] >> (7 - i)) & 1;
-      if (currentBit == 1) {
-        bytes[i] = (byte) (bytes[i] | 0b00000001); // Set the least significant bit to 1
-      } else {
-        bytes[i] = (byte) (bytes[i] & 0b11111110); // Set the least significant bit to 0
-      }
-      messageBitCounter++;
-      if (messageBitCounter == 8) {
-        messageByteCounter++;
-        messageBitCounter = 0;
+      if (messageByteCounter < message.length) {
+        int currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
+        if (currentBit == 1) {
+          bytes[i] |= 0b00000001; // Set LSB to 1
+        } else {
+          bytes[i] &= 0b11111110; // Set LSB to 0
+        }
+        messageBitCounter++;
+        if (messageBitCounter == 8) {
+          messageBitCounter = 0;
+          messageByteCounter++;
+        }
       }
     }
+
     return bytes;
   }
 

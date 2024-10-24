@@ -15,8 +15,6 @@ public class LSB4 implements Algorithm {
 
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 4; j++) {
-        System.out.println("byte counter:" + messageByteCounter);
-        System.out.println("messageLength: " + message.length);
         currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
 
         bytes[i] = (byte) ((bytes[i] & ~(1 << j)) | (currentBit << j));
@@ -26,6 +24,10 @@ public class LSB4 implements Algorithm {
         if (messageBitCounter == 8) {
           messageByteCounter++;
           messageBitCounter = 0;
+
+          if (messageByteCounter >= message.length) {
+            return bytes;
+          }
         }
       }
     }
@@ -37,8 +39,8 @@ public class LSB4 implements Algorithm {
   public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
     int currentBit;
     byte[] bytes = new byte[3];
-    for (int i = 0; i < 3; i++) { // Loop through blue, red, green bytes
-      for (int j = 0; j < 4; j++) { // Extract 4 least significant bits
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 4; j++) {
         currentBit = (bytes[i] >> j) & 1;
 
         msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));

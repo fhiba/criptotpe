@@ -3,57 +3,58 @@ package ar.edu.itba.algs;
 import ar.edu.itba.Algorithm;
 
 public class LSB4 implements Algorithm {
-    private Integer bitsUsed = 4;
+  private Integer bitsUsed = 4;
 
-    @Override
-    public byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter) {
-        int currentBit;
-        byte[] bytes = new byte[3];
-        bytes[0] = blue;
-        bytes[1] = red;
-        bytes[2] = green;
+  @Override
+  public byte[] run(byte blue, byte green, byte red, byte[] message, int messageByteCounter, int messageBitCounter) {
+    int currentBit;
+    byte[] bytes = new byte[3];
+    bytes[0] = blue;
+    bytes[1] = red;
+    bytes[2] = green;
 
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 4; j++) {
+        System.out.println("byte counter:" + messageByteCounter);
+        System.out.println("messageLength: " + message.length);
+        currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
 
-                bytes[i] = (byte) ((bytes[i] & ~(1 << j)) | (currentBit << j));
+        bytes[i] = (byte) ((bytes[i] & ~(1 << j)) | (currentBit << j));
 
-                messageBitCounter++;
+        messageBitCounter++;
 
-                if (messageBitCounter == 8) {
-                    messageByteCounter++;
-                    messageBitCounter = 0;
-                }
-            }
+        if (messageBitCounter == 8) {
+          messageByteCounter++;
+          messageBitCounter = 0;
         }
-
-        return bytes;
+      }
     }
 
-    @Override
+    return bytes;
+  }
 
-    public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
-        int currentBit;
-        byte[] bytes = new byte[3];
-        for (int i = 0; i < 3; i++) { // Loop through blue, red, green bytes
-            for (int j = 0; j < 4; j++) { // Extract 4 least significant bits
-                currentBit = (bytes[i] >> j) & 1;
+  @Override
+  public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
+    int currentBit;
+    byte[] bytes = new byte[3];
+    for (int i = 0; i < 3; i++) { // Loop through blue, red, green bytes
+      for (int j = 0; j < 4; j++) { // Extract 4 least significant bits
+        currentBit = (bytes[i] >> j) & 1;
 
-                msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
+        msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
 
-                bitCounter++;
+        bitCounter++;
 
-                if (bitCounter == 8) {
-                    byteCounter++;
-                    bitCounter = 0;
-                }
-            }
+        if (bitCounter == 8) {
+          byteCounter++;
+          bitCounter = 0;
         }
+      }
     }
+  }
 
-    @Override
-    public Integer getBitsUsed() {
-        return bitsUsed;
-    }
+  @Override
+  public Integer getBitsUsed() {
+    return bitsUsed;
+  }
 }

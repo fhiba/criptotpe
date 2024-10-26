@@ -160,12 +160,10 @@ public class App {
                 app.embed = new Embed();
                 app.embed.embed(app.cmd.getOptionValue("in"), app.cmd.getOptionValue("out"),
                         app.cmd.getOptionValue("p"), app.algorithm, app.encryption);
-                app.embed.hide();
             } else {
                 app.extract = new Extract();
                 app.extract.extract(app.cmd.getOptionValue("p"), app.cmd.getOptionValue("out"), app.algorithm,
                         app.encryption);
-                app.extract.retrieve();
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());

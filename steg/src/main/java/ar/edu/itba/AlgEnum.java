@@ -20,7 +20,7 @@ public enum AlgEnum {
     public static Supplier<Algorithm> getAlg(String argument) {
         Supplier<Algorithm> out = null;
         for (AlgEnum aux : AlgEnum.values()) {
-            if (argument.equals(aux.algString))
+            if (aux.algString.equals(argument))
                 out = aux.algorithm;
         }
         if (out == null)

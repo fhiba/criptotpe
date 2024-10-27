@@ -30,6 +30,7 @@ public class Encryption {
         this.algorithm = alg != null ? alg : EncEnum.AES128;
     }
 
+
     private KeyIvPair generateKeyAndIvFromPassword(String password)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, 65536, this.algorithm.getKeySize() + 128); // Add
@@ -112,5 +113,10 @@ public class Encryption {
 
     public static String getDefaultPadding() {
         return DEFAULT_PADDING;
+    }
+
+    public int calculatePaddingSize(byte[] message) {
+        int blockSize = algorithm.BLOCK_SIZE;
+        return  blockSize - (message.length % blockSize);
     }
 }

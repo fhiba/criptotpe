@@ -6,15 +6,15 @@ public class LSBI implements Algorithm {
     private Integer bitsUsed = 1;
 
     @Override
-    public int embed(int color, byte[] message, int messageByteCounter, int messageBitCounter) {
+    public int embed(byte[] message, byte[] output, int offset) {
         byte[] bytes = new byte[3];
-
+/*
         int[] bitsModified = new int[4];
         int[] bitsNotModified = new int[4];
 
         collectModificationData(bytes, message, messageByteCounter, messageBitCounter, bitsModified, bitsNotModified);
 
-        int[] inversionBits = calculateInversionBits(bitsModified, bitsNotModified);
+        int[] inversionBits = calculateInversionBits(bitsModified, bitsNotModified);*/
         return 1;
         // return embedMessageBytes(bytes, message, messageByteCounter,
         // messageBitCounter, inversionBits);

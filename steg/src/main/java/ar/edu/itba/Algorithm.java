@@ -4,7 +4,7 @@ import java.io.FileInputStream;
 
 public interface Algorithm {
 
-    int embed(int color, byte[] message, int messageByteCounter, int messageBitCounter);
+    public int embed(byte[] message, byte[] output, int offset);
 
     void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter);
 

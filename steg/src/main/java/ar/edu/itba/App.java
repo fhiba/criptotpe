@@ -8,8 +8,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.HelpFormatter;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 public class App {
@@ -140,8 +138,10 @@ public class App {
             algorithm = alg.get();
 
             if (cmd.hasOption("pass")) {
-                encryption = new Encryption(EncModeEnum.getMode(cmd.getOptionValue("m")),
-                        EncEnum.getEncryption(cmd.getOptionValue("a")), cmd.getOptionValue("pass"));
+                EncModeEnum mode = EncModeEnum.getMode(cmd.getOptionValue("m"));
+                EncEnum enc = EncEnum.getEncryption(cmd.getOptionValue("a"));
+                encryption = new Encryption( mode == null ? EncModeEnum.CBC:mode,
+                        enc == null? EncEnum.AES128 : enc, cmd.getOptionValue("pass"));
             }
 
         } catch (ParseException e) {

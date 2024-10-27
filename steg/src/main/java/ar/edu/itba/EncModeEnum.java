@@ -14,7 +14,7 @@ public enum EncModeEnum {
 
     public static EncModeEnum getMode(String mode) {
         for (EncModeEnum aux : EncModeEnum.values()) {
-            if (mode.equals(aux.mode))
+            if (aux.mode.equals(mode))
                 return aux;
         }
         return null;

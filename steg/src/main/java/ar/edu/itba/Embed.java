@@ -1,202 +1,108 @@
 package ar.edu.itba;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
+import ar.edu.itba.exceptions.EncryptionErrorException;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import javax.imageio.ImageIO;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Embed {
-    private String filePath;
-    private String bitmapFile;
-    private String outFile;
-    private Algorithm alg;
-    private EncModeEnum mode;
-    private String pass;
-    private EncEnum encEnum;
-    private Encryption enc;
+  private String filePath;
+  private String bitmapFile;
+  private String outFile;
+  private Algorithm alg;
+  private EncModeEnum mode;
+  private String pass;
+  private EncEnum encEnum;
+  private Encryption enc;
+  private final static int HEADER_SIZE = 54;
+  private final static int SIZE_SIZE = 4;
+  private final static int NULL_TERMINATION = 1;
 
-    public void embed(String inputFile, String outputFile, String bmp, Algorithm algorithm, Encryption encryption)
-            throws Exception {
-        filePath = inputFile;
-        bitmapFile = bmp;
-        outFile = outputFile;
-        alg = algorithm;
-        if (encryption != null) {
-            mode = encryption.getMode();
-            pass = encryption.getPassword();
-            enc = encryption;
-        }
-        hide();
+  public void embed(String inputFile, String outputFile, String bmp, Algorithm algorithm, Encryption encryption)
+          throws Exception {
+    filePath = inputFile;
+    bitmapFile = bmp;
+    outFile = outputFile;
+    alg = algorithm;
+    if (encryption != null) {
+      mode = encryption.getMode();
+      pass = encryption.getPassword();
+      enc = encryption;
+    }
+    hide();
+  }
+
+  private boolean notEnoughSize(long bmpSize, long msgSize, long extensionSize) {
+    return bmpSize <= msgSize * alg.getBitsUsed() + HEADER_SIZE + SIZE_SIZE + extensionSize + NULL_TERMINATION;
+  }
+  public static byte[] concatenate(byte[] array1, byte[] array2, byte[] array3, byte[] array4) {
+    int totalLength = array1.length + array2.length + array3.length + array4.length;
+    byte[] result = new byte[totalLength];
+
+    System.arraycopy(array1, 0, result, 0, array1.length);
+    System.arraycopy(array2, 0, result, array1.length, array2.length);
+    System.arraycopy(array3, 0, result, array1.length + array2.length, array3.length);
+    System.arraycopy(array4, 0, result, array1.length + array2.length + array3.length, array4.length);
+
+    return result;
+  }
+  public static byte[] concatenate(byte[] array1, byte[] array2) {
+    byte[] result = new byte[array1.length + array2.length];
+    System.arraycopy(array1, 0, result, 0, array1.length);
+    System.arraycopy(array2, 0, result, array1.length, array2.length);
+    return result;
+  }
+
+  private void hide() throws RuntimeException, IOException, EncryptionErrorException {
+    // File management
+    final File msgFile = new File(filePath);
+    final File output = new File(bitmapFile);
+    final long outputSize = output.length();
+    byte[] outputBytes = Files.readAllBytes(output.toPath());
+    String extension = filePath.substring(filePath.lastIndexOf('.'));
+    final long extensionLength = extension.length();
+    final int msgSize = (int) msgFile.length();
+    byte[] msgBytes = Files.readAllBytes(msgFile.toPath());
+    byte[] extensionBytes = extension.getBytes();
+
+
+
+    if (notEnoughSize(outputSize, msgSize, extensionLength)) {
+      throw new RuntimeException("Not enough space for embedding file in bitmap");
     }
 
-    public boolean canStore(long imageSize, long messageSize) {
-        return messageSize * 8 <= imageSize * alg.getBitsUsed();
+    // Convert message size to bytes (big endian)
+    byte[] sizeBytes = ByteBuffer.allocate(Integer.SIZE / 8).putInt(msgSize).array();
+
+    byte[] toEmbed = concatenate(sizeBytes, msgBytes, extensionBytes,new byte[]{0});
+
+
+    if(enc != null) {
+      int toEmbedSize = toEmbed.length + enc.calculatePaddingSize(toEmbed);
+      if (notEnoughSize(outputSize, toEmbedSize, -1)) {
+        throw new RuntimeException("Not enough space for embedding file in bitmap");
+      }
+
+      byte[] encryptedEmbed = enc.encrypt(toEmbed);
+      byte[] paddedSizeBytes = ByteBuffer.allocate(Integer.SIZE / 8).putInt(toEmbedSize).array();
+      toEmbed = concatenate(paddedSizeBytes, encryptedEmbed);
     }
 
-    public void hide() throws Exception {
-        File bmpFile = new File(bitmapFile);
-        File msgFile = new File(filePath);
-        FileInputStream fis = new FileInputStream(bmpFile);
-        FileInputStream message = new FileInputStream(msgFile);
-        byte[] messageBytes = message.readAllBytes();
-        System.out.println("File path: " + filePath);
+    // Embed file size
+    alg.embed(toEmbed, outputBytes, HEADER_SIZE);
 
-        String extension = null;
-        long fullSize = 0;
-
-        String[] auxStrings = filePath.split("\\.");
-
-        if (auxStrings.length > 1) {
-            extension = auxStrings[auxStrings.length - 1];
-            System.out.println("Extracted extension: " + extension);
-
-            long msgFileLength = msgFile.length();
-            System.out.println("Message file length: " + msgFileLength);
-
-            fullSize = msgFileLength + 4 + 2 + extension.length();
-            System.out.println("Full size: " + fullSize);
-        } else {
-            System.out.println("Error: No extension found in the file path.");
-        }
-
-        if (fullSize <= 0) {
-            fis.close();
-            message.close();
-            throw new RuntimeException("Full size calculation resulted in an invalid size.");
-        }
-
-        if (!canStore(bmpFile.length() - 54, fullSize)) {
-            fis.close();
-            message.close();
-            throw new RuntimeException("Cannot store the message in the image.");
-        }
-
-        byte[] header = new byte[54];
-        fis.read(header);
-
-        BufferedImage image = ImageIO.read(bmpFile);
-        int width = image.getWidth();
-        int height = image.getHeight();
-        byte[] storeSize = ByteBuffer.allocate(Integer.BYTES).putInt((int) fullSize).array();
-        int messageIndex = 0;
-        Integer bitCounter = 0;
-        Integer byteCounter = 0;
-        int[] colors = new int[3];
-        int x = 0, y = 0;
-        int modifiedBmpBytes = 1;
-        // solo para embedear el tamaño total del mensaje
-        for (int j = y; j < height; j++) {
-            for (int i = x; i < width; i++) {
-                colors = getColors(i, j, image);
-                for (int k = 0; k < 3; k++) {
-                    if (modifiedBmpBytes >= 4) {
-                        x = i;
-                        y = j;
-                        break;
-                    }
-                    colors[k] = alg.embed(colors[k], storeSize, byteCounter, bitCounter);
-                    bitCounter += alg.getBitsUsed();
-                    if (bitCounter >= 8) {
-                        byteCounter++;
-                        bitCounter = 0;
-                    }
-                    modifiedBmpBytes++;
-                }
-                if (modifiedBmpBytes >= 4)
-                    break;
-                setNewColors(i, j, colors, image);
-            }
-            if (modifiedBmpBytes >= 4)
-                break;
-        }
-        System.out.println("sali del size");
-        bitCounter = 0;
-        byteCounter = 0;
-        int msgSize = (int) (fullSize - extension.length() - 6); // el magic number 6 viene de 4 por el size y 2 del . y
-                                                                 // \0
-        // embed del mensaje completo sin extension
-        for (int j = y; j < height; j++) {
-            for (int i = x; i < width; i++) {
-                if (msgSize == 1) { // Changed from msgSize == 1
-                    x = i;
-                    y = j;
-                    break;
-                }
-
-                colors = getColors(i, j, image);
-
-                for (int k = 0; k < 3; k++) {
-                    if (byteCounter >= messageBytes.length) {
-                        break;
-                    }
-                    colors[k] = alg.embed(colors[k], messageBytes, byteCounter, bitCounter);
-                    bitCounter += alg.getBitsUsed();
-                    if (bitCounter >= 8) {
-                        byteCounter++;
-                        bitCounter = 0;
-                        msgSize--;
-                    }
-                }
-                System.out.println((char) messageBytes[byteCounter]);
-                setNewColors(i, j, colors, image);
-            }
-            if (msgSize == 1)
-                break;
-        }
-        System.out.println("sali del msj");
-        bitCounter = 0;
-        byteCounter = 0;
-        int extensionSize = extension.length();
-        byte[] extensionBytes = extension.getBytes();
-        for (int j = y; j < height; j++) {
-            for (int i = x; i < width; i++) {
-                if (extensionSize == 1) {
-                    x = i;
-                    y = j;
-                    break;
-                }
-                colors = getColors(i, j, image);
-
-                for (int k = 0; k < 3; k++) {
-                    if (byteCounter >= extensionBytes.length) {
-                        break;
-                    }
-                    colors[k] = alg.embed(colors[k], extensionBytes, byteCounter, bitCounter);
-                    bitCounter += alg.getBitsUsed();
-                    if (bitCounter >= 8) {
-                        byteCounter++;
-                        bitCounter = 0;
-                        extensionSize--;
-                    }
-                }
-                setNewColors(i, j, colors, image);
-            }
-            if (extensionSize == 1)
-                break;
-        }
-        System.out.println("sali de la extension");
-        try {
-            File out = new File(outFile);
-            ImageIO.write(image, "bmp", out);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    try {
+      saveImage(outFile, outputBytes);
+    } catch (IOException e) {
+      throw new IOException("Failed to create the embed files");
     }
+  }
 
-    private int[] getColors(int x, int y, BufferedImage image) {
-        int pixel = image.getRGB(x, y);
-        Color color = new Color(pixel, true);
-        return new int[] { color.getBlue(), color.getGreen(), color.getRed() };
-    }
-
-    private void setNewColors(int i, int j, int[] colors, BufferedImage image) {
-        Color newColor = new Color(colors[2], colors[1], colors[0]);
-        image.setRGB(i, j, newColor.getRGB());
-    }
-
+  private void saveImage(String outFilePath, byte[] modifiedFile) throws IOException {
+    Path path = Path.of(outFilePath);
+    Files.write(path, modifiedFile);
+  }
 }

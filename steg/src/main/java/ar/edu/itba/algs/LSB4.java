@@ -6,7 +6,7 @@ public class LSB4 implements Algorithm {
     private Integer bitsUsed = 4;
 
     @Override
-    public int embed(int color, byte[] message, int messageByteCounter, int messageBitCounter) {
+    public int embed(byte[] message, byte[] output, int offset) {
         int currentBit = 0;
         /*
          * bytes[0] = blue;

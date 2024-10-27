@@ -1,20 +1,21 @@
 package ar.edu.itba;
 
 public enum EncEnum {
-    AES128("aes128"),
-    AES192("aes192"),
-    AES256("aes256"),
-    DES3("3des");
+    AES128("aes128", 16),
+    AES192("aes192", 16),
+    AES256("aes256", 16),
+    DES3("3des", 8);
 
     public String encryption;
-
-    private EncEnum(String encryption) {
+    public int BLOCK_SIZE;
+    private EncEnum(String encryption, int BLOCK_SIZE) {
         this.encryption = encryption;
+        this.BLOCK_SIZE = BLOCK_SIZE;
     }
 
     public static EncEnum getEncryption(String encryption) {
         for (EncEnum aux : EncEnum.values()) {
-            if (encryption.equals(aux.encryption))
+            if (aux.encryption.equals(encryption))
                 return aux;
         }
         return null;
@@ -38,5 +39,9 @@ public enum EncEnum {
             case "des3" -> "DESede";
             default -> "AES";
         };
+    }
+
+    public int getBLOCK_SIZE() {
+        return this.BLOCK_SIZE;
     }
 }

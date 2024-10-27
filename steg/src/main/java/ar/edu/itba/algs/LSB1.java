@@ -7,18 +7,22 @@ public class LSB1 implements Algorithm {
     Integer bitsUsed = 1;
 
     @Override
-    public int embed(int color, byte[] message, int messageByteCounter, int messageBitCounter) {
+    public int embed(byte[] message, byte[] output, int offset) {
+        int currentOffset = offset;
 
-        int currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
+        for (byte b : message) {
+            // Process each bit of the byte
+            for (int bitIndex = 7; bitIndex >= 0; bitIndex--) {
+                // Extract the current bit from the byte to embed
+                int bit = (b >> bitIndex) & 1;
 
-        if (currentBit == 1) {
-            color |= 0x01;
-        } else {
-            color &= 0xFE;
+                // Clear the LSB of the output byte and set it to our bit
+                output[currentOffset] = (byte) ((output[currentOffset] & 0xFE) | bit);
+                currentOffset++;
+            }
+
         }
-
-        return color;
-
+        return currentOffset;
     }
 
     @Override

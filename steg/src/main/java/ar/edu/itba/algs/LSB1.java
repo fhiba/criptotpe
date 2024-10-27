@@ -26,13 +26,22 @@ public class LSB1 implements Algorithm {
     }
 
     @Override
-    public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
-        int currentBit;
-
-        currentBit = forExtraction & 1;
-
-        msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
+    public byte extract(byte[] inputBytes, int startOffset) {
+        byte extractedByte = 0;
+        for (int bitIndex = 7; bitIndex >= 0; bitIndex--) {
+            if (startOffset >= inputBytes.length) {
+                throw new IllegalStateException("Unexpected end of file while extracting bits");
+            }
+            // Get LSB from current input byte
+            int bit = inputBytes[startOffset] & 1;
+            // Place the bit in the correct position
+            extractedByte |= (byte) (bit << bitIndex);
+            startOffset++;
+        }
+        return extractedByte;
     }
+
+
 
     @Override
     public Integer getBitsUsed() {

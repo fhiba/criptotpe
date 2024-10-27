@@ -35,27 +35,6 @@ public class Embed {
     hide();
   }
 
-  private boolean notEnoughSize(long bmpSize, long msgSize, long extensionSize) {
-    return bmpSize <= msgSize * alg.getBitsUsed() + HEADER_SIZE + SIZE_SIZE + extensionSize + NULL_TERMINATION;
-  }
-  public static byte[] concatenate(byte[] array1, byte[] array2, byte[] array3, byte[] array4) {
-    int totalLength = array1.length + array2.length + array3.length + array4.length;
-    byte[] result = new byte[totalLength];
-
-    System.arraycopy(array1, 0, result, 0, array1.length);
-    System.arraycopy(array2, 0, result, array1.length, array2.length);
-    System.arraycopy(array3, 0, result, array1.length + array2.length, array3.length);
-    System.arraycopy(array4, 0, result, array1.length + array2.length + array3.length, array4.length);
-
-    return result;
-  }
-  public static byte[] concatenate(byte[] array1, byte[] array2) {
-    byte[] result = new byte[array1.length + array2.length];
-    System.arraycopy(array1, 0, result, 0, array1.length);
-    System.arraycopy(array2, 0, result, array1.length, array2.length);
-    return result;
-  }
-
   private void hide() throws RuntimeException, IOException, EncryptionErrorException {
     // File management
     final File msgFile = new File(filePath);
@@ -67,8 +46,6 @@ public class Embed {
     final int msgSize = (int) msgFile.length();
     byte[] msgBytes = Files.readAllBytes(msgFile.toPath());
     byte[] extensionBytes = extension.getBytes();
-
-
 
     if (notEnoughSize(outputSize, msgSize, extensionLength)) {
       throw new RuntimeException("Not enough space for embedding file in bitmap");
@@ -99,6 +76,29 @@ public class Embed {
     } catch (IOException e) {
       throw new IOException("Failed to create the embed files");
     }
+  }
+
+  private boolean notEnoughSize(long bmpSize, long msgSize, long extensionSize) {
+    return bmpSize <= msgSize * alg.getBitsUsed() + HEADER_SIZE + SIZE_SIZE + extensionSize + NULL_TERMINATION;
+  }
+
+  private byte[] concatenate(byte[] array1, byte[] array2, byte[] array3, byte[] array4) {
+    int totalLength = array1.length + array2.length + array3.length + array4.length;
+    byte[] result = new byte[totalLength];
+
+    System.arraycopy(array1, 0, result, 0, array1.length);
+    System.arraycopy(array2, 0, result, array1.length, array2.length);
+    System.arraycopy(array3, 0, result, array1.length + array2.length, array3.length);
+    System.arraycopy(array4, 0, result, array1.length + array2.length + array3.length, array4.length);
+
+    return result;
+  }
+
+  private byte[] concatenate(byte[] array1, byte[] array2) {
+    byte[] result = new byte[array1.length + array2.length];
+    System.arraycopy(array1, 0, result, 0, array1.length);
+    System.arraycopy(array2, 0, result, array1.length, array2.length);
+    return result;
   }
 
   private void saveImage(String outFilePath, byte[] modifiedFile) throws IOException {

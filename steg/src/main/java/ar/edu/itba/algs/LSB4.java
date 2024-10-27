@@ -7,52 +7,36 @@ public class LSB4 implements Algorithm {
 
     @Override
     public int embed(byte[] message, byte[] output, int offset) {
-        int currentBit = 0;
-        /*
-         * bytes[0] = blue;
-         * bytes[1] = red;
-         * bytes[2] = green;
-         * 
-         * for (int i = 0; i < 3; i++) {
-         * for (int j = 0; j < 4; j++) {
-         * currentBit = (message[messageByteCounter] >> (7 - messageBitCounter)) & 1;
-         * 
-         * bytes[i] = (byte) ((bytes[i] & ~(1 << j)) | (currentBit << j));
-         * 
-         * messageBitCounter++;
-         * 
-         * if (messageBitCounter == 8) {
-         * messageByteCounter++;
-         * messageBitCounter = 0;
-         * 
-         * if (messageByteCounter >= message.length) {
-         * return bytes;
-         * }
-         * }
-         * }
-         * }
-         */
-        return currentBit;
+        int currentOffset = offset;
+        for (byte b : message) {
+            // We need to spread each byte across two output bytes (4 bits each)
+            // First output byte gets the high nibble
+            int highNibble = (b >> 4) & 0x0F;
+            output[currentOffset] = (byte) ((output[currentOffset] & 0xF0) | highNibble);
+            currentOffset++;
+
+            // Second output byte gets the low nibble
+            int lowNibble = b & 0x0F;
+            output[currentOffset] = (byte) ((output[currentOffset] & 0xF0) | lowNibble);
+            currentOffset++;
+        }
+        return currentOffset;
     }
 
     @Override
-    public void extract(byte forExtraction, byte[] msg, int byteCounter, int bitCounter) {
-        int currentBit;
-        byte[] bytes = new byte[3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                currentBit = (bytes[i] >> j) & 1;
-
-                msg[byteCounter] = (byte) (msg[byteCounter] | (currentBit << (7 - bitCounter)));
-
-                bitCounter++;
-
-                if (bitCounter == 8) {
-                    byteCounter++;
-                    bitCounter = 0;
-                }
-            }
+    public byte extract(byte[] inputBytes, int startOffset) {
+        if (startOffset + 1 >= inputBytes.length) {
+            throw new IllegalStateException("Unexpected end of file while extracting bits");
         }
+
+        // Extract high nibble from first byte
+        int highNibble = inputBytes[startOffset] & 0x0F;
+
+        // Extract low nibble from second byte
+        int lowNibble = inputBytes[startOffset + 1] & 0x0F;
+
+        // Combine nibbles into a byte
+        return (byte) ((highNibble << 4) | lowNibble);
     }
 
     @Override

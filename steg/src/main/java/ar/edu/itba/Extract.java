@@ -31,81 +31,96 @@ public class Extract {
         final File input = new File(encryptedBitmapFilePath);
         byte[] inputBytes = Files.readAllBytes(input.toPath());
 
-        // Verify we have enough bytes for the header and size
         if (inputBytes.length < HEADER_SIZE + 32) {
             throw new IllegalStateException("Input file is too small");
         }
 
-        // Extract the size (4 bytes)
         byte[] sizeBytes = new byte[4];
         int inputOffset = HEADER_SIZE;
-
-        // Extract size bytes
         for (int i = 0; i < 4; i++) {
             sizeBytes[i] = alg.extract(inputBytes, inputOffset);
-            // Adjust offset based on algorithm
             inputOffset += (alg.getBitsUsed() == 4) ? 2 : 8;
         }
 
-        // Convert size bytes to integer (big endian)
-        int totalSize = ByteBuffer.wrap(sizeBytes).getInt();
-        System.out.println("Extracted file size: " + totalSize);
+        int firstSize = ByteBuffer.wrap(sizeBytes).getInt();
+        System.out.println("First extracted size: " + firstSize);
 
-        // Validate total size based on algorithm
-        long maxSize;
-        if (alg.getBitsUsed() == 4) {
-            maxSize = (inputBytes.length - HEADER_SIZE) / 2; // LSB4 uses 2 bytes per message byte
-        } else {
-            maxSize = (inputBytes.length - HEADER_SIZE) / 8; // LSB1 and LSBI use 8 bytes per message byte
+        long maxSize = (inputBytes.length - HEADER_SIZE) / (alg.getBitsUsed() == 4 ? 2 : 8);
+        if (firstSize <= 0 || firstSize > maxSize) {
+            throw new IllegalStateException("Invalid extracted size: " + firstSize);
         }
 
-        if (totalSize <= 0 || totalSize > maxSize) {
-            throw new IllegalStateException("Invalid extracted size: " + totalSize);
-        }
-
-        // Extract the file content
-        byte[] fileContent = new byte[totalSize];
-        for (int i = 0; i < totalSize; i++) {
-            fileContent[i] = alg.extract(inputBytes, inputOffset);
-            // Adjust offset based on algorithm
+        byte[] content = new byte[firstSize];
+        for (int i = 0; i < firstSize; i++) {
+            content[i] = alg.extract(inputBytes, inputOffset);
             inputOffset += (alg.getBitsUsed() == 4) ? 2 : 8;
         }
 
-        // If encryption is used, decrypt the content
+        byte[] messageContent;
+        int realSize;
+
         if (enc != null) {
-            fileContent = enc.decrypt(fileContent);
-        }
+            byte[] decryptedContent = enc.decrypt(content);
 
-        // Extract extension - read until null byte
-        ByteArrayOutputStream extensionBytes = new ByteArrayOutputStream();
-        byte extractedByte;
-        do {
-            if (inputOffset >= inputBytes.length) {
-                throw new IllegalStateException("No null terminator found for extension");
+            realSize = ByteBuffer.wrap(decryptedContent, 0, 4).getInt();
+            System.out.println("Real file size after decryption: " + realSize);
+
+            messageContent = new byte[realSize];
+            System.arraycopy(decryptedContent, 4, messageContent, 0, realSize);
+
+            ByteArrayOutputStream extensionBytes = new ByteArrayOutputStream();
+            int extensionOffset = 4 + realSize;
+            while (extensionOffset < decryptedContent.length && decryptedContent[extensionOffset] != 0) {
+                extensionBytes.write(decryptedContent[extensionOffset]);
+                extensionOffset++;
             }
-            extractedByte = alg.extract(inputBytes, inputOffset);
-            if (extractedByte != 0) {
-                extensionBytes.write(extractedByte);
-            }
-            // Adjust offset based on algorithm
-            inputOffset += (alg.getBitsUsed() == 4) ? 2 : 8;
-        } while (extractedByte != 0);
+            String extension = new String(extensionBytes.toByteArray(), StandardCharsets.UTF_8);
+            System.out.println("Extracted extension: " + extension);
 
-        String extension = new String(extensionBytes.toByteArray(), StandardCharsets.UTF_8);
-        System.out.println("Extracted extension: " + extension);
-
-        // Save the file with the correct extension
-        try {
-            String outPath = outFilePath;
-            if (!extension.isEmpty()) {
-                if (!extension.startsWith(".")) {
-                    outPath += ".";
+            try {
+                String outPath = outFilePath;
+                if (!extension.isEmpty()) {
+                    if (!extension.startsWith(".")) {
+                        outPath += ".";
+                    }
+                    outPath += extension;
                 }
-                outPath += extension;
+                Files.write(Path.of(outPath), messageContent);
+            } catch (IOException e) {
+                throw new IOException("Failed to create the extracted file: " + e.getMessage());
             }
-            Files.write(Path.of(outPath), fileContent);
-        } catch (IOException e) {
-            throw new IOException("Failed to create the extracted file: " + e.getMessage());
+        } else {
+            messageContent = new byte[firstSize];
+            System.arraycopy(content, 0, messageContent, 0, firstSize);
+
+            ByteArrayOutputStream extensionBytes = new ByteArrayOutputStream();
+            byte extractedByte;
+            do {
+                if (inputOffset >= inputBytes.length) {
+                    throw new IllegalStateException("No null terminator found for extension");
+                }
+                extractedByte = alg.extract(inputBytes, inputOffset);
+                if (extractedByte != 0) {
+                    extensionBytes.write(extractedByte);
+                }
+                inputOffset += (alg.getBitsUsed() == 4) ? 2 : 8;
+            } while (extractedByte != 0);
+
+            String extension = new String(extensionBytes.toByteArray(), StandardCharsets.UTF_8);
+            System.out.println("Extracted extension: " + extension);
+
+            try {
+                String outPath = outFilePath;
+                if (!extension.isEmpty()) {
+                    if (!extension.startsWith(".")) {
+                        outPath += ".";
+                    }
+                    outPath += extension;
+                }
+                Files.write(Path.of(outPath), messageContent);
+            } catch (IOException e) {
+                throw new IOException("Failed to create the extracted file: " + e.getMessage());
+            }
         }
     }
 }

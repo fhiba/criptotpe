@@ -1,5 +1,8 @@
 package ar.edu.itba.algs;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+
 import ar.edu.itba.Algorithm;
 
 public class LSB1 implements Algorithm {
@@ -25,8 +28,7 @@ public class LSB1 implements Algorithm {
         return currentOffset;
     }
 
-    @Override
-    public byte extract(byte[] inputBytes, int startOffset) {
+    private byte extractByte(byte[] inputBytes, int startOffset) {
         byte extractedByte = 0;
         for (int bitIndex = 7; bitIndex >= 0; bitIndex--) {
             if (startOffset >= inputBytes.length) {
@@ -41,10 +43,43 @@ public class LSB1 implements Algorithm {
         return extractedByte;
     }
 
+    public int extract(byte[] inputBytes, ByteArrayOutputStream contentBytes, int offset) {
 
+        byte[] sizeBytes = new byte[MSG_SIZE_BYTE];
+        for (int i = 0; i < MSG_SIZE_BYTE; i++) {
+            sizeBytes[i] = extractByte(inputBytes, offset);
+            offset += Byte.SIZE / bitsUsed;
+        }
+
+        int firstSize = ByteBuffer.wrap(sizeBytes).getInt();
+        long maxSize = (inputBytes.length - HEADER_SIZE) / Byte.SIZE / bitsUsed;
+        if (firstSize <= 0 || firstSize > maxSize) {
+            throw new IllegalStateException("Invalid extracted size: " + firstSize);
+        }
+
+        for (int i = 0; i < firstSize; i++) {
+            contentBytes.write(extractByte(inputBytes, offset));
+            offset += Byte.SIZE / bitsUsed;
+        }
+        return offset;
+    }
 
     @Override
     public Integer getBitsUsed() {
         return bitsUsed;
+    }
+
+    @Override
+    public String extractExtension(byte[] inputBytes, int offset) {
+        StringBuilder extension = new StringBuilder();
+        while (offset < inputBytes.length) {
+            byte b = extractByte(inputBytes, offset);
+            offset += Byte.SIZE / bitsUsed;
+            if (b == 0) {
+                break;
+            }
+            extension.append((char) b);
+        }
+        return extension.toString();
     }
 }

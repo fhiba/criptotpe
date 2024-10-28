@@ -6,8 +6,8 @@ import ar.edu.itba.algs.*;
 
 public enum AlgEnum {
     LSB1("lsb1", LSB1::new),
-    lsb4("lsb4", LSB4::new),
-    lsbi("lsbi", LSBI::new);
+    LSB4("lsb4", LSB4::new),
+    LSBI("lsbi", LSBI::new);
 
     String algString;
     Supplier<Algorithm> algorithm;

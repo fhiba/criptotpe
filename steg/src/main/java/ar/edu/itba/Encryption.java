@@ -74,6 +74,8 @@ public class Encryption {
     }
 
     private String generateTransformationStr() {
+        if (this.mode == EncModeEnum.OFB) return this.algorithm.getAlgName() + "/OFB/NoPadding";
+        if (this.mode == EncModeEnum.CFB && this.algorithm.getKeySize() == 128) return this.algorithm.getAlgName() + "/CFB8/NoPadding";
         return this.algorithm.getAlgName() + "/" + this.mode.mode.toUpperCase() + "/" + DEFAULT_PADDING;
     }
 

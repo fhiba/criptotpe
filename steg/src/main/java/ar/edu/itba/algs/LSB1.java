@@ -14,12 +14,9 @@ public class LSB1 implements Algorithm {
         int currentOffset = offset;
 
         for (byte b : message) {
-            // Process each bit of the byte
             for (int bitIndex = 7; bitIndex >= 0; bitIndex--) {
-                // Extract the current bit from the byte to embed
                 int bit = (b >> bitIndex) & 1;
 
-                // Clear the LSB of the output byte and set it to our bit
                 output[currentOffset] = (byte) ((output[currentOffset] & 0xFE) | bit);
                 currentOffset++;
             }
@@ -34,9 +31,7 @@ public class LSB1 implements Algorithm {
             if (startOffset >= inputBytes.length) {
                 throw new IllegalStateException("Unexpected end of file while extracting bits");
             }
-            // Get LSB from current input byte
             int bit = inputBytes[startOffset] & 1;
-            // Place the bit in the correct position
             extractedByte |= (byte) (bit << bitIndex);
             startOffset++;
         }

@@ -8,6 +8,7 @@ public enum EncEnum {
 
     public String encryption;
     public int BLOCK_SIZE;
+
     private EncEnum(String encryption, int BLOCK_SIZE) {
         this.encryption = encryption;
         this.BLOCK_SIZE = BLOCK_SIZE;
@@ -21,22 +22,22 @@ public enum EncEnum {
         return null;
     }
 
-    public int getKeySize(){
+    public int getKeySize() {
         return switch (this.encryption) {
             case "aes128" -> 128;
             case "aes192" -> 192;
             case "aes256" -> 256;
-            case "des3" -> 168;
+            case "3des" -> 192;
             default -> 128;
         };
     }
 
-    public String getAlgName(){
+    public String getAlgName() {
         return switch (this.encryption) {
             case "aes128" -> "AES";
             case "aes192" -> "AES";
             case "aes256" -> "AES";
-            case "des3" -> "DESede";
+            case "3des" -> "DESede";
             default -> "AES";
         };
     }

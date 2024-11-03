@@ -9,14 +9,10 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.util.Arrays;
-import java.util.Locale;
 
 public class Encryption {
     private EncModeEnum mode;
@@ -36,12 +32,13 @@ public class Encryption {
 
     private KeyIvPair generateKeyAndIvFromPassword(String password)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, ITERATIONS, this.algorithm.getKeySize() + 128);
+        int ivSize = (this.algorithm.getAlgName().contains("DES")) ? 8 : 16;
+        int totalBits = this.algorithm.getKeySize() + (ivSize * 8);
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, ITERATIONS, totalBits);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] keyAndIv = factory.generateSecret(spec).getEncoded();
-
         byte[] keyBytes = new byte[this.algorithm.getKeySize() / 8];
-        byte[] ivBytes = new byte[16];
+        byte[] ivBytes = new byte[ivSize];
         System.arraycopy(keyAndIv, 0, keyBytes, 0, keyBytes.length);
         System.arraycopy(keyAndIv, keyBytes.length, ivBytes, 0, ivBytes.length);
 
@@ -57,10 +54,7 @@ public class Encryption {
         System.out.println("Key size: " + this.algorithm.getKeySize());
         System.out.println("Iteraciones: " + ITERATIONS);
         System.out.println("keyBytes: " + bytesToHex(keyBytes));
-        // System.out.println("key ana:
-        // 3cbada241e1fbbd27005928e93cbab8188a0983eb6ea9dbf");
         System.out.println("ivBytes: " + bytesToHex(ivBytes));
-        // System.out.println("iv Ana: d69f142e70311b1c61d1f0e3b0ebc7c3");
 
         return new KeyIvPair(secretKey, ivSpec);
     }
@@ -74,8 +68,10 @@ public class Encryption {
     }
 
     private String generateTransformationStr() {
-        if (this.mode == EncModeEnum.OFB) return this.algorithm.getAlgName() + "/OFB/NoPadding";
-        if (this.mode == EncModeEnum.CFB && this.algorithm.getKeySize() == 128) return this.algorithm.getAlgName() + "/CFB8/NoPadding";
+        if (this.mode == EncModeEnum.OFB)
+            return this.algorithm.getAlgName() + "/OFB/NoPadding";
+        if (this.mode == EncModeEnum.CFB && this.algorithm.getKeySize() == 128)
+            return this.algorithm.getAlgName() + "/CFB8/NoPadding";
         return this.algorithm.getAlgName() + "/" + this.mode.mode.toUpperCase() + "/" + DEFAULT_PADDING;
     }
 

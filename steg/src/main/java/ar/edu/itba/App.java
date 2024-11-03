@@ -140,8 +140,8 @@ public class App {
             if (cmd.hasOption("pass")) {
                 EncModeEnum mode = EncModeEnum.getMode(cmd.getOptionValue("m"));
                 EncEnum enc = EncEnum.getEncryption(cmd.getOptionValue("a"));
-                encryption = new Encryption( mode == null ? EncModeEnum.CBC:mode,
-                        enc == null? EncEnum.AES128 : enc, cmd.getOptionValue("pass"));
+                encryption = new Encryption(mode == null ? EncModeEnum.CBC : mode,
+                        enc == null ? EncEnum.AES128 : enc, cmd.getOptionValue("pass"));
             }
 
         } catch (ParseException e) {

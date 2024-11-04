@@ -2,6 +2,7 @@ package ar.edu.itba;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ public class Extract {
 
     private void retrieveLSBI(byte[] content) throws IOException, EncryptionErrorException, DecryptionErrorException {
         int dataSize = ByteBuffer.wrap(content, 0, Algorithm.MSG_SIZE_BYTE).getInt();
+        System.out.println("Data size: " + dataSize);
         int offset = Algorithm.MSG_SIZE_BYTE;
         byte[] data = new byte[dataSize];
         System.arraycopy(content, 4, data, 0, dataSize);
@@ -74,12 +76,17 @@ public class Extract {
         final File input = new File(encryptedBitmapFilePath);
         byte[] inputBytes = Files.readAllBytes(input.toPath());
 
-        if (inputBytes.length < HEADER_SIZE + 32) {
+        int bmpHeaderOffset = ByteBuffer.wrap(inputBytes, 10, 4)
+                                      .order(ByteOrder.LITTLE_ENDIAN)
+                                      .getInt();
+        System.out.println("BMP header offset: " + bmpHeaderOffset);
+
+        if (inputBytes.length < bmpHeaderOffset + 32) {
             throw new IllegalStateException("Input file is too small");
         }
 
         ByteArrayOutputStream contentBytes = new ByteArrayOutputStream();
-        int offset = alg.extract(inputBytes, contentBytes, HEADER_SIZE); // Just to check if the algorithm is valid
+        int offset = alg.extract(inputBytes, contentBytes, bmpHeaderOffset);
         byte[] content = contentBytes.toByteArray();
         if (alg instanceof LSBI) {
             retrieveLSBI(content);
